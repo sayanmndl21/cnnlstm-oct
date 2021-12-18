@@ -1,15 +1,21 @@
 import pandas as pd
 import torch
 from torch.utils.data.dataset import Dataset
+from torchvision import transforms, utils
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+import PIL
+import os
 
 class CNNLSTMDataLoader(Dataset):
-    def __init__(self, folder_dataset, labelcol = 'slope',dropc = None ,transform = None, timestep = 5, n=3):
-        self.dataset = pd.read_csv(folder_dataset)
+    def __init__(self, csv_dataset, img_folder, labelcol = 'slope',dropc = None , \
+    transform = transforms.Compose([transforms.Resize(128),transforms.ToTensor(),transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]), \
+    timestep = 5, n=3):
+        self.dataset = pd.read_csv(csv_dataset)
         if dropc:
             self.dataset = self.dataset.drop(columns=dropc)
         self.timestep = timestep
         self.transform = transform
+        self.img_folder = img_folder
         self.n = n
         #self.dataset = self.dataset.iloc[::-1] #reverse
         self.chunks, self.labels, self.seqlen = self.dataprep(labelcol)
@@ -22,36 +28,42 @@ class CNNLSTMDataLoader(Dataset):
         labels = []
         seqlen = []
         for _, group in grouped:
-            group = group.sort_values(by=['day'],ascending=False)
+            group = group.sort_values(by=['pdate'],ascending=True)
             if len(group) == self.n:
-                    block = torch.tensor(group.iloc[-self.n:,1:-1].to_numpy())
-                    chunks += [torch.flip(torch.nn.functional.pad(block,(0,0,0,self.timestep-block.shape[0])),[0])]
-                    labels += [self.encode(group[labelcol].iloc[0])]
+                    chunks += [group['filename'].iloc[:self.n].to_list()]
+                    labels += [group[labelcol].iloc[self.n-1]]
                     seqlen += [self.n]
             elif len(group)>self.n:
                 for i in range(self.n,group.shape[0]+1):
-                    block = torch.tensor(group.iloc[-i:,1:-1].to_numpy())
-                    chunks += [torch.flip(torch.nn.functional.pad(block,(0,0,0,self.timestep-block.shape[0])),[0])]
-                    labels += [self.encode(group[labelcol].iloc[-i])]
-                    seqlen += [i]
+                    if i < self.timestep:
+                        chunks += [group['filename'].iloc[:i].to_list()]
+                        labels += [group[labelcol].iloc[i-1]]
+                        seqlen += [i]
+                    else:
+                        chunks += [group['filename'].iloc[i-self.timestep:i].to_list()]
+                        labels += [group[labelcol].iloc[i-1]]
+                        seqlen += [i]
 
-        return torch.stack(chunks), torch.tensor(labels), torch.tensor(seqlen)
+        return chunks, labels, seqlen
 
-    def encode(self, label, codedict =  {'p':1,'n':0}):
-        return codedict[label]
-
-    def labels(self):
+    def getlabels(self):
         return self.labels
 
     def __len__(self):
         return len(self.chunks)
     
     def __getitem__(self, index):
-        x = self.chunks[index,:,:]
+        files = self.chunks[index]
+        images = []
+        for file in files:
+            image = PIL.Image.open(os.path.join(self.img_folder,file))
+            if self.transform is not None:
+                image = self.transform(image)
+            images += [image]
+        x = torch.stack(images,0)
         y = self.labels[index]
         s = self.seqlen[index]
-        if self.transform is not None:
-            x = self.transform(x)
+        
         return x,y,s
 
 
