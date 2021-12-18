@@ -69,7 +69,7 @@ class CNNLSTMDataLoader(Dataset):
                 image = PIL.Image.open(path2)
             elif os.path.isfile(path3):
                 image = PIL.Image.open(path3)
-            elif os.path.isfile(path4):
+            else:
                 image = PIL.Image.open(path4)
             if self.transform is not None:
                 image = self.transform(image)
