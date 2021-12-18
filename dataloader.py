@@ -56,7 +56,11 @@ class CNNLSTMDataLoader(Dataset):
         files = self.chunks[index]
         images = []
         for file in files:
-            image = PIL.Image.open(os.path.join(self.img_folder,file))
+            path = os.path.join(self.img_folder,file)
+            if os.path.isfile(path):
+                image = PIL.Image.open(path)
+            else:
+                image = PIL.Image.open(os.path.join(self.img_folder,file[:-3]+'jpg'))
             if self.transform is not None:
                 image = self.transform(image)
             images += [image]
