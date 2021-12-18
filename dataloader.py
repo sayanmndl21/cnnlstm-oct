@@ -77,6 +77,6 @@ class CNNLSTMDataLoader(Dataset):
         y = self.labels[index]
         s = self.seqlen[index]
         
-        return x,y,s
+        return x,y,s, files
 
 
