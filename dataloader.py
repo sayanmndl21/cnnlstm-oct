@@ -55,6 +55,7 @@ class CNNLSTMDataLoader(Dataset):
     def __getitem__(self, index):
         files = self.chunks[index]
         images = []
+        print(files)
         for file in files:
             path1 = os.path.join(self.img_folder,file)
             path2 = os.path.join(self.img_folder,file[:-3]+'jpg')
