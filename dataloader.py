@@ -3,29 +3,17 @@ import torch
 from torch.utils.data.dataset import Dataset
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 
-class VAEMVTSDataLoader(Dataset):
-    def __init__(self, folder_dataset, labelcol = 'label',splittype = 'train', split = 0.33,dropc = None ,transform = None, timestep = 26, n=3):
+class CNNLSTMDataLoader(Dataset):
+    def __init__(self, folder_dataset, labelcol = 'slope',dropc = None ,transform = None, timestep = 5, n=3):
         self.dataset = pd.read_csv(folder_dataset)
         if dropc:
             self.dataset = self.dataset.drop(columns=dropc)
-        self.dataset = self.dataset[self.dataset['label']!='b']
         self.timestep = timestep
         self.transform = transform
         self.n = n
-        self.scaledata()
         #self.dataset = self.dataset.iloc[::-1] #reverse
         self.chunks, self.labels, self.seqlen = self.dataprep(labelcol)
-        l = len(self.labels)
-        if splittype == 'train':
-            self.chunks, self.labels, self.seqlen = self.chunks[int(l*split):,:,:], self.labels[int(l*split):], self.seqlen[int(l*split):]
-        elif splittype == 'test':
-            self.chunks, self.labels, self.seqlen = self.chunks[:int(l*split),:,:], self.labels[:int(l*split)], self.seqlen[:int(l*split)]
         
-
-    def scaledata(self):
-        self.dataset['day'] = self.dataset['day'].apply(lambda x : (x)/(109500)) #max days 10 years
-        self.dataset['age'] = self.dataset['age'].apply(lambda x : (x)/(100)) #max days 10 years
-
     def dataprep(self, labelcol):
         grouped = self.dataset.groupby('maskedeye')
         #grouped = iter(grouped)
