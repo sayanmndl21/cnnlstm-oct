@@ -43,14 +43,15 @@ class CNNEncoder(nn.Module):
 
     
 class TimeDistributed(nn.Module):
-    def __init__(self, layer, time_steps, *args):        
+    def __init__(self, layer, time_steps, *args, device = 'cpu'):        
         super(TimeDistributed, self).__init__()
+        self.device = device
         self.layers = nn.ModuleList([layer(*args) for i in range(time_steps)])
 
     def forward(self, x):
 
         batch_size, time_steps, C, H, W = x.size()
-        output = torch.tensor([])
+        output = torch.tensor([]).to(self.device)
         for i in range(time_steps):
           output_t = self.layers[i](x[:, i, :, :, :])
           output_t  = output_t.unsqueeze(1)
@@ -96,7 +97,7 @@ class LSTMModule(torch.nn.Module):
 class CNNLSTMNet(nn.Module):
     def __init__(self, channels = 3, ts = 5, n_out = 1, device = 'cpu'):
         super(CNNLSTMNet, self).__init__()
-        self.ts_cnn = TimeDistributed(CNNEncoder, ts, channels)
+        self.ts_cnn = TimeDistributed(CNNEncoder, ts, channels, device = device)
         self.lstm_decoder = LSTMModule(1024, 128, 2, ts, n_out, device=device)
 
     def forward(self, x):
