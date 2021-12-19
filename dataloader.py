@@ -7,7 +7,7 @@ import PIL
 import os
 
 class CNNLSTMDataLoader(Dataset):
-    def __init__(self, csv_dataset, img_folder, labelcol = 'slope',dropc = None , \
+    def __init__(self, csv_dataset, img_folder, targetcol = 'slope',dropc = None , \
     transform = transforms.Compose([transforms.Resize(128),transforms.ToTensor(),transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]), \
     timestep = 5, n=3):
         self.dataset = pd.read_csv(csv_dataset)
@@ -18,36 +18,36 @@ class CNNLSTMDataLoader(Dataset):
         self.img_folder = img_folder
         self.n = n
         #self.dataset = self.dataset.iloc[::-1] #reverse
-        self.chunks, self.labels, self.seqlen = self.dataprep(labelcol)
+        self.chunks, self.targets, self.seqlen = self.dataprep(targetcol)
         
-    def dataprep(self, labelcol):
+    def dataprep(self, targetcol):
         grouped = self.dataset.groupby('maskedeye')
         #grouped = iter(grouped)
         #_, chunk = next(grouped)
         chunks = []
-        labels = []
+        targets = []
         seqlen = []
         for _, group in grouped:
             group = group.sort_values(by=['pdate'],ascending=True)
             if len(group) == self.n:
                     chunks += [group['filename'].iloc[:self.n].to_list()]
-                    labels += [group[labelcol].iloc[self.n-1]]
+                    targets += [group[targetcol].iloc[self.n-1]]
                     seqlen += [self.n]
             elif len(group)>self.n:
                 for i in range(self.n,group.shape[0]+1):
                     if i < self.timestep:
                         chunks += [group['filename'].iloc[:i].to_list()]
-                        labels += [group[labelcol].iloc[i-1]]
+                        targets += [group[targetcol].iloc[i-1]]
                         seqlen += [i]
                     else:
                         chunks += [group['filename'].iloc[i-self.timestep:i].to_list()]
-                        labels += [group[labelcol].iloc[i-1]]
+                        targets += [group[targetcol].iloc[i-1]]
                         seqlen += [i]
 
-        return chunks, labels, seqlen
+        return chunks, targets, seqlen
 
-    def getlabels(self):
-        return self.labels
+    def gettargets(self):
+        return self.targets
 
     def __len__(self):
         return len(self.chunks)
@@ -62,7 +62,7 @@ class CNNLSTMDataLoader(Dataset):
                 image = self.transform(image)
             images += [image]
         x = torch.stack(images,0)
-        y = self.labels[index]
+        y = self.targets[index]
         s = self.seqlen[index]
         
         return x,y,s
