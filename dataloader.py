@@ -55,11 +55,9 @@ class CNNLSTMDataLoader(Dataset):
     def __getitem__(self, index):
         files = self.chunks[index]
         images = []
-        print(files)
         for file in files:
             path = os.path.join(self.img_folder,file)
-            if os.path.isfile(path):
-                image = PIL.Image.open(path)
+            image = PIL.Image.open(path)
             if self.transform is not None:
                 image = self.transform(image)
             images += [image]
@@ -67,6 +65,6 @@ class CNNLSTMDataLoader(Dataset):
         y = self.labels[index]
         s = self.seqlen[index]
         
-        return x,y,s, files
+        return x,y,s
 
 
