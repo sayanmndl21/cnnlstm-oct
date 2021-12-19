@@ -20,7 +20,7 @@ class ConvBlock(nn.Module):
         return self.seq(x)
 
 class CNNEncoder(nn.Module):
-    def __init__(self, in_c, in_shape = 128 ,channels = [16, 32, 64]):        
+    def __init__(self, in_c, in_shape = 64 ,channels = [16, 32, 64]):        
         super(CNNEncoder, self).__init__()
         self.channels = [in_c] + channels
         conv_blocks = [ConvBlock(in_f, out_f, kernel_size=3,stride = 2 , padding=1) 
@@ -76,9 +76,9 @@ class LSTMModule(torch.nn.Module):
         # (batch_size,seq_len, num_directions * hidden_size)
         l = 2 if bidirectional else 1
         self.decoder_network = nn.Sequential(
-            nn.Linear(self.n_hidden*seq_len*l, 256),
+            nn.Linear(self.n_hidden*seq_len*l, 128),
             nn.ReLU(),
-            nn.Linear(256, n_out)
+            nn.Linear(128, n_out)
         )
         
     
