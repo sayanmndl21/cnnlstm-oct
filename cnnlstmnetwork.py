@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.utils
 import torch.distributions
 
+n_encode = 512
 
 #timedistributed cnn network
 class ConvBlock(nn.Module):
@@ -20,7 +21,7 @@ class ConvBlock(nn.Module):
         return self.seq(x)
 
 class CNNEncoder(nn.Module):
-    def __init__(self, in_c, in_shape = 64 ,channels = [16, 32, 64]):        
+    def __init__(self, in_c, in_shape = 64 ,channels = [16, 32, 64], n_out = 512):        
         super(CNNEncoder, self).__init__()
         self.channels = [in_c] + channels
         conv_blocks = [ConvBlock(in_f, out_f, kernel_size=3,stride = 2 , padding=1) 
@@ -29,15 +30,16 @@ class CNNEncoder(nn.Module):
         in_n = int(self.channels[-1]*(in_shape//(2**len(channels)))*(in_shape//(2**len(channels))))
         self.linear = nn.Sequential(
             nn.Dropout(0.3),
-            nn.Linear(in_n, 1024),
-            #nn.ReLU(),
-            #nn.Linear(2048, 1024)
+            nn.Linear(in_n, 2048), #change to in_n
+            nn.ReLU(),
+            nn.Linear(2048, n_encode)
         )
         
 
     def forward(self, x):
         x = self.cnnmodule(x)
         x = x.view(x.size(0),-1)
+        #print('xshape',x.shape)
         x = self.linear(x)
         return x
 
@@ -71,7 +73,7 @@ class LSTMModule(torch.nn.Module):
                                  num_layers = self.n_layers, 
                                  batch_first = True,
                                  bidirectional = bidirectional,
-                                 dropout = 0.2)
+                                 dropout = 0.3)
         # according to pytorch docs LSTM output is 
         # (batch_size,seq_len, num_directions * hidden_size)
         l = 2 if bidirectional else 1
@@ -97,8 +99,8 @@ class LSTMModule(torch.nn.Module):
 class CNNLSTMNet(nn.Module):
     def __init__(self, channels = 3, ts = 5, n_out = 1, device = 'cpu'):
         super(CNNLSTMNet, self).__init__()
-        self.ts_cnn = TimeDistributed(CNNEncoder, ts, channels, device = device)
-        self.lstm_decoder = LSTMModule(1024, 128, 2, ts, n_out, device=device)
+        self.ts_cnn = TimeDistributed(CNNEncoder, ts, channels,device = device)
+        self.lstm_decoder = LSTMModule(n_encode, 128, 2, ts, n_out, device=device)
 
     def forward(self, x):
         x = self.ts_cnn(x)
