@@ -30,19 +30,22 @@ class CNNLSTMDataLoader(Dataset):
         for _, group in grouped:
             group = group.sort_values(by=['pdate'],ascending=True)
             if len(group) == self.n:
-                    chunks += [group['filename'].iloc[:self.n].to_list()]
-                    targets += [group[targetcol].iloc[self.n-1]]
-                    seqlen += [self.n]
+                chunks += [group['filename'].iloc[:self.n].to_list()]
+                targets += [group[targetcol].iloc[self.n-1]]
+                seqlen += [self.n]
             elif len(group)>self.n:
-                for i in range(self.n,group.shape[0]+1):
-                    if i < self.timestep:
-                        chunks += [group['filename'].iloc[:i].to_list()]
-                        targets += [group[targetcol].iloc[i-1]]
-                        seqlen += [i]
-                    else:
-                        chunks += [group['filename'].iloc[i-self.timestep:i].to_list()]
-                        targets += [group[targetcol].iloc[i-1]]
-                        seqlen += [i]
+                chunks += [group['filename'].iloc[-self.timestep:].to_list()]
+                targets += [group[targetcol].iloc[-1]]
+                seqlen += [self.timestep]
+                #for i in range(self.n,group.shape[0]+1):
+                #    if i < self.timestep:
+                #        chunks += [group['filename'].iloc[:i].to_list()]
+                #        targets += [group[targetcol].iloc[i-1]]
+                #        seqlen += [i]
+                #    else:
+                #        chunks += [group['filename'].iloc[i-self.timestep:i].to_list()]
+                #        targets += [group[targetcol].iloc[i-1]]
+                #        seqlen += [i]
 
         return chunks, targets, seqlen
 
