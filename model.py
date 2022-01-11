@@ -30,16 +30,17 @@ class CNNEncoder(nn.Module):
         in_n = int(self.channels[-1]*(in_shape//(2**len(channels)))*(in_shape//(2**len(channels))))
         self.linear = nn.Sequential(
             nn.Dropout(0.3),
-            nn.Linear(in_n, n_encode), #change to in_n
+            nn.Linear(in_n, 2048), #change to in_n
             nn.ReLU(),
+            nn.Linear(2048,n_encode),
         )
         
 
     def forward(self, x):
         x = self.cnnmodule(x)
-        print('xshape',x.shape)
+        #print('xshape',x.shape)
         x = x.view(x.size(0),-1)
-        print('xshape',x.shape)
+        #print('xshape',x.shape)
         x = self.linear(x)
         return x
 
@@ -58,7 +59,7 @@ class TimeDistributed(nn.Module):
           output_t = self.layers[i](x[:, i, :, :, :])
           output_t  = output_t.unsqueeze(1)
           output = torch.cat((output, output_t ), 1)
-        print('out',output.shape)
+        #print('out',output.shape)
         return output
 
 class LSTMModule(torch.nn.Module):
@@ -79,9 +80,10 @@ class LSTMModule(torch.nn.Module):
         # (batch_size,seq_len, num_directions * hidden_size)
         l = 2 if bidirectional else 1
         self.decoder_network = nn.Sequential(
-            nn.Linear(self.n_hidden*seq_len*l, 128),
-            nn.ReLU(),
-            nn.Linear(128, n_out)
+        
+            nn.Linear(self.n_hidden*seq_len*l, n_out),
+            #nn.ReLU(),
+            #nn.Linear(128, n_out)
         )
         
     
@@ -93,7 +95,7 @@ class LSTMModule(torch.nn.Module):
         lstm_out, (hidden,cell) = self.l_lstm(data.float(),(hidden_state0,cell_state0))
              
         out = lstm_out.contiguous().view(batch_size,-1)
-        print('lstm', out.shape)
+        #print('lstm', out.shape)
         out = self.decoder_network(out)
         return out
 
