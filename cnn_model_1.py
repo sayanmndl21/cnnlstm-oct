@@ -80,8 +80,9 @@ class LSTMModule(torch.nn.Module):
         # (batch_size,seq_len, num_directions * hidden_size)
         l = 2 if bidirectional else 1
         self.decoder_network = nn.Sequential(
-        
+            nn.Dropout(0.3),
             nn.Linear(self.n_hidden*seq_len*l, n_out),
+            
             #nn.ReLU(),
             #nn.Linear(128, n_out)
         )
@@ -104,7 +105,7 @@ class CNNLSTMNet(nn.Module):
     def __init__(self, channels = 3, ts = 2, n_out = 1, device = 'cpu'):
         super(CNNLSTMNet, self).__init__()
         self.ts_cnn = TimeDistributed(CNNEncoder, ts, channels,device = device)
-        self.lstm_decoder = LSTMModule(n_encode, 64, 2, ts, n_out, device=device)
+        self.lstm_decoder = LSTMModule(n_encode, 32, 2, ts, n_out, device=device)
 
     def forward(self, x):
         x = self.ts_cnn(x)
