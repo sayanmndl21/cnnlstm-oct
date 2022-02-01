@@ -105,7 +105,7 @@ class CNNLSTMNet(nn.Module):
     def __init__(self, channels = 3, ts = 2, n_out = 1, device = 'cpu'):
         super(CNNLSTMNet, self).__init__()
         self.ts_cnn = TimeDistributed(CNNEncoder, ts, channels,device = device)
-        self.lstm_decoder = LSTMModule(n_encode, 128, 2, ts, n_out, device=device)
+        self.lstm_decoder = LSTMModule(n_encode, 64, 2, ts, n_out, device=device)
 
     def forward(self, x):
         x = self.ts_cnn(x)
