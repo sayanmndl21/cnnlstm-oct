@@ -27,7 +27,7 @@ class PWDataLoader(Dataset):
         for _, group in grouped:
             for i in range(1,group.shape[0]):
                 chunks += [[group['filename'].iloc[0],group['filename'].iloc[i]]]
-                targets += [group[targetcol].iloc[i]]
+                targets += [-group[targetcol].iloc[i]]
                 seqlen += [i]
         return chunks, targets, seqlen
 
